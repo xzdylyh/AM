@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}测试用例管理{% endblock %}
+{% block content %}
+<div>
+    <label><a href="/iface/">>>当前位置：用例管理</a></label>
+</div>
+
+<!--add table to data -->
+<div>
+    <div class="bs-example bs-example-form" role="form">
+        <div class="row">
+            <div class="col-lg-6 pull-left">
+                <div class="input-group">
+                    <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal" name="addCase" onclick="changeId('add')">
+                        <span class="glyphicon glyphicon-plus" style="color: rgb(255, 255, 255);"></span>增加用例
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-3 pull-right">
+                <div class="input-group">
+                    <input type="text" id="search_input" class="form-control" placeholder="根据描述搜索"/>
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" id="search_btn"><span class="glyphicon glyphicon-search"></span> 搜索</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!--views is case data -->
+<div>
+    <table  class="table table-bordered table-condensed table-hover">
+        <caption></caption>
+        <thead>
+            <tr class="active">
+                <th style="width:40px;">序号</th>
+                <th>接口描述</th>
+                 <th>接口地址</th>
+                 <th style="width:40px;">方法</th>
+                 <th>数据</th>
+                 <th>预期</th>
+                 <th style="width:139px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for case in posts %}
+
+                <tr>
+                    <td class="active">{{forloop.counter}}</td>
+                    <td>
+                        <div class="MHover" title="{{case.ICaseDescription}}">{{case.ICaseDescription}}</div>
+                    </td>
+                    <td>
+                        <div class="MHover" title="{{case.ICaseURL}}">{{case.ICaseURL}}</div>
+                    </td>
+                    <td>{{case.ICaseMethod}}</td>
+                    <td>
+                        <div class="MHover" title="{{case.ICase_Data}}">{{case.ICase_Data}}</div>
+                    </td>
+                    <td>
+                        <div class="MHover" title="{{case.ICase_ExResult}}">{{case.ICase_ExResult}}</div>
+                    </td>
+                    <td>
+
+                        <button class="btn btn-primary btn-xs" data-toggle="modal" data-target="#myModal" id="{{case.id}}" name="dbtn" onclick="select_data('{{case.id}}');changeId('modify')">
+                            <span class="glyphicon glyphicon-wrench" style="color: rgb(255, 255, 255);">修改</span>
+                        </button>
+
+                        <button class="btn btn-danger btn-xs" id="{{case.id}}" name="deleteBtn" onclick="delete_case('{{case.id}}')">
+                            <span class="glyphicon glyphicon-remove" style="color: rgb(255, 255, 255);">删除</span>
+                        </button>
+
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<ul class="pagination pagination-sm pull-left">
+    {{fpageDesc|safe}}
+</ul>
+
+<ul class="pagination pagination-sm pull-right">
+    {{fpageCount|safe}}
+</ul>
+
+<!--模态框-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="modelTiele"></h4>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <form id="addcaseform" class="form form-horizontal" role="form" method="post">
+                        <input class="form-control" type="hidden" id="save_case_id"/>
+                        <div class="input-group col-sm-6">
+                            <span class="input-group-addon">url:</span>
+                            <input class="form-control" name="eurl" id="eurl" type="text"/>
+                        </div>
+                        <br>
+                        <div class="input-group col-sm-6" >
+                            <span class="input-group-addon">描述:</span>
+                            <input class="form-control" name="edesc" id="edesc" type="text"/>
+                        </div>
+                        <br>
+                        <div class="input-group col-sm-3" >
+                            <span class="input-group-addon">方法:</span>
+                            <select class="form-control" name="emethod" id="emethod1">
+                                <option value="0">POST</option>
+                                <option value="1">GET</option>
+                            </select>
+                            </div>
+
+                            <div class="input-group col-sm-3">
+                                <span class="input-group-addon ">类型:</span>
+                                    <select class="form-control" name="etype" id="etype">
+                                        <option value="0">HTTP</option>
+                                        <option value="1">WebService</option>
+                                    </select>
+                            </div>
+                            <br>
+                            <div class="form-group col-sm-6">
+                                <label class="control-label">数据:</label>
+                                <textarea name="edata" id="edata1" class="form-control"></textarea>
+                            </div>
+
+                            <div class="form-group col-sm-6">
+                                <label class="control-label">预期:</label>
+                                <textarea name="eresult" id="eresult" class="form-control"></textarea>
+                            </div>
+                            {%csrf_token%}
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="confirm_submit" onclick="select_func()"></button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    //点击修改按钮进行，数据查询
+    function select_data(caseid){
+        $("#save_case_id").val(caseid); //记录要修改的case id
+        $.ajax({
+                    url:'/select_case_data/',
+                    type:'POST',
+                    data:{"caseid":caseid},
+                    dataType:'json',
+
+                    success:function(data){
+                        var tmp =eval(data);
+                        $("#edesc").val(data['ICaseDescription']);//描述赋值
+                        $("#edata1").val(data['ICase_Data']);
+                        $("#emethod1").val(data['ICaseMethod']);
+                        $("#eurl").val(data['ICaseURL']);
+                        $("#eresult").val(data['ICase_ExResult']);
+                    },
+                    error:function(){
+                        alert("error");
+                    }
+
+
+        });
+    };
+
+    //选择模态窗口，是新增，还是修改
+    function select_func(){
+        var confirmBtnVal=$("#confirm_submit").html();
+        if(confirmBtnVal=="确认新增"){
+            add_case_func();
+        }
+        if(confirmBtnVal=="确认修改"){
+            modify_case_func();
+        }
+    };
+
+    //确认修改按钮事件
+    function modify_case_func(){
+        //
+        if(confirm("确认要修改吗？")){
+            var flag =1;
+        }else{
+            var flag =0;
+        }
+        if(flag==1){
+            $.ajax({
+                url:'/case_modify_data/',
+                type:'post',
+                data:{
+                    'caseid':$("#save_case_id").val(),
+                    'url':$("#eurl").val(),
+                    'desc':$("#edesc").val(),
+                    'method':$("#emethod1").val(),
+                    'itype':$("#etype").val(),
+                    'data':$("#edata1").val(),
+                    'exresult':$("#eresult").val()
+                },
+                dataType:'text',
+                success:function(data){
+                    window.location.reload();
+                },
+                error:function(){
+                    alert('error');
+                }
+            });
+        }
+    };
+
+</script>
+
+
+<script>
+    //模态窗口标题及提交按钮
+    function changeId(btn){
+        if(btn=="add"){
+            $("#modelTiele").html("增加测试用例");
+            $("#confirm_submit").html("确认新增");
+            $("#eurl").val("");
+            $("#edesc").val("");
+            $("#edata1").val("");
+            $("#eresult").val("");
+        }
+        if(btn=="modify"){
+            $("#modelTiele").html("修改测试用例");
+            $("#confirm_submit").html("确认修改");
+        }
+
+    };
+
+
+
+    //增加测试用例
+    function add_case_func(){
+        //
+        if(confirm("确认要新增吗？")){
+            var flag =1;
+        }else{
+            var flag =0;
+        }
+        if(flag==1){
+            if($("#eurl").val()!="" && $("#edesc").val()!="" && $("#edata1").val()!="" && $("#eresult").val()!="")
+            {
+                $.ajax({
+                    url:'/case_add_data/',
+                    type:'post',
+                    dataType:'text',
+                    data:{
+                    'idesc':$("#edesc").val(),
+                    'iurl':$("#eurl").val(),
+                    'imethod':$("#emethod1").val(),
+                    'idata':$("#edata1").val(),
+                    'iresult':$("#eresult").val()
+                    },
+                    error:function(data){
+                        alert("ajax error");
+                    },
+                    success:function(data){
+                        window.location.reload();
+                    }
+
+                });
+            }else{
+                alert("字段不能为空。");
+            }
+        }else{
+
+        }
+    };
+
+</script>
+
+<script>
+        function delete_case(caseid){
+            //删除确认对话框
+            if(confirm("确认删除吗?"))
+            {
+                var flag = 1;
+            }else{
+                var flag = 0;
+            }
+
+            //ajax将caseid传到后台，执行删除，并返回数据。
+            if(flag==1)
+            {
+                $.ajax({
+                    url:'/case_delete_data/',
+                    type:'POST',
+                    data:{"caseid":caseid},
+                    dataType:'text',
+
+                    success:function(posts){
+                        window.location.reload();
+                        //alert("success_ajax");
+                        //$("body").html(posts);
+
+                    }
+
+                });
+            }else{
+
+            }
+        }
+
+    </script>
+
+{% endblock %}
